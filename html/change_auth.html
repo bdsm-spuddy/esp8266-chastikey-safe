@@ -1,0 +1,40 @@
+<html>
+<body>
+<form method=post action=safe/ enctype="multipart/form-data">
+To set the user name and password needed to access the safe:
+<br>
+Safe Username: <input name=username size=40>
+<br>
+Safe Password: <input name=password size=40>
+<p>
+<input type=submit value="Set Auth Details" name=setauth>
+<p>
+If the change is accepted, you will need to login again.
+<hr>
+To talk to the Chastikey Server you need to enter your API
+details.  These can be found/generated from the App.
+<br>
+API Key: <input name=apikey size=40 value="##apikey##">
+<br>
+API Secrety: <input name=apisecret size=40 value="##apisecret##">
+<p>
+<input type=submit value="Set API Details" name=setapi>
+<p>
+If the values are incorrect you will not be able to talk to the server
+and will need to correct the values.
+<hr>
+You need to enter the username you set in the application <i>or</i> your
+DiscordID if you have linked Discord to the app
+<br>
+If you change this in the middle of a lock then you might lose access
+to that lock, so beware!<br>
+<select name=idtype>
+<option value="u" ##usernameselected##>Username
+<option value="d" ##discordselected##>Discord ID
+</select>
+<input name=idvalue size=40 value="##idvalue##">
+<p>
+<input type=submit value="Set User Details" name=setuser>
+</form>
+</body>
+</html>
