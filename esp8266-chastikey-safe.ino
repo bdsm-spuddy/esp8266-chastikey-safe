@@ -512,6 +512,23 @@ void setup()
     Serial.println(WiFi.localIP());
     Serial.print("Hostname:\t");
     Serial.println(WiFi.hostname());
+
+    // Get the current time.  We need this for TLS cert validation
+    // it's not instant.  Timezone handling... GMT is always good :-)
+    configTime(0, 0, "pool.ntp.org", "time.nist.gov");
+    Serial.print("Waiting for NTP time sync: ");
+    time_t now = time(nullptr);
+    while (now < 8 * 3600 * 2)
+    {
+      delay(500);
+      Serial.print(".");
+      now = time(nullptr);
+    }
+    Serial.println("");
+    struct tm timeinfo;
+    gmtime_r(&now, &timeinfo);
+    Serial.print("Current time: ");
+    Serial.println(asctime(&timeinfo));
   }
   else
   {
