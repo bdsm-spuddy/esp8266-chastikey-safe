@@ -36,7 +36,7 @@ details.  These can be found/generated from the App.
 <br>
 API Key: <input name=apikey size=40 value="##apikey##">
 <br>
-API Secrety: <input name=apisecret size=40 value="##apisecret##">
+API Secret: <input name=apisecret size=40 value="##apisecret##">
 <p>
 <input type=submit value="Set API Details" name=setapi>
 <p>
