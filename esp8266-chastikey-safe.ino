@@ -210,10 +210,10 @@ void talk_to_api()
     int l = raw_data["locks"].size();
 
     if (l == 0)
-      return send_text("No lock found!  Either the lockID is wrong or you deleted it...");
+      return send_text("No lock found for ID " + String(lockid) + "!  Either the lockID is wrong or you deleted it...");
 
     good_api_result=true;
-    String s = "There are " + String(l) + " locks<br>";
+    String s = "There are " + String(l) + " locks for lock group id " + String(lockid )+ "<br>";
 
     bool to_unlock=false;
     for (int i=0;i<l;i++)
