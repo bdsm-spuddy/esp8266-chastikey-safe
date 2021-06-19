@@ -23,7 +23,7 @@
 // connected to the relay
 #define pin D6
 
-// We need to store 8 values in EEPROM.
+// We need to store some values in EEPROM.
 //   safe UI username
 //   safe UI password
 //   WiFi SSID
@@ -32,6 +32,7 @@
 //   API Secret
 //   Discord ID/Username
 //   Lock ID
+//   API URL
 //
 // For simplicitly we'll limit them to 100 characters each and sprinkle
 // them through the EEPROM at 128 byte offsets
@@ -40,7 +41,7 @@
 //
 // We put a magic string in front to detect if the values are good or not
 
-#define EEPROM_SIZE 1024
+#define EEPROM_SIZE 2048
 #define maxpwlen 100
 #define eeprom_magic "PSWD:"
 #define eeprom_magic_len 5
@@ -53,6 +54,7 @@
 #define api_secret_offset    640
 #define username_offset      768
 #define lockid_offset        896
+#define apiurl_offset        1024
 
 enum safestate
 {
@@ -70,7 +72,7 @@ boolean wifi_connected;
 BearSSL::WiFiClientSecure client;
 BearSSL::X509List cert(rootCA);
 
-#define API "https://api.chastikey.com/v0.5/checklock.php"
+#define DEFAULT_API "https://api.chastikey.com/v0.5/checklock.php"
 
 // These can be read at startup time from EEPROM
 String ui_username;
@@ -81,6 +83,7 @@ String api_key;
 String api_secret;
 String username;
 String lockid;
+String apiurl;
 
 // Create the webserver structure for port 80
 ESP8266WebServer server(80);
@@ -167,8 +170,8 @@ void talk_to_api()
   HTTPClient https;
   https.useHTTP10(true);
 
-  Serial.println(API);
-  if (https.begin(client, API))
+  Serial.println(apiurl);
+  if (https.begin(client, apiurl))
   { 
     https.addHeader("ClientID",api_key);
     https.addHeader("ClientSecret",api_secret);
@@ -178,10 +181,10 @@ void talk_to_api()
     Serial.println(us + "=" + u + "&lockID=" + lockid);
     int httpCode = https.POST(us + "=" + u + "&lockID=" + lockid);
 
-    if (httpCode < 0)
+    if (httpCode != 200)
     {
       https.end();
-      return send_text("Problems talking to API: " + String(https.errorToString(httpCode).c_str()));
+      return send_text("Problems talking to API: Response " + String(httpCode) + " " + https.errorToString(httpCode));
     }
 
     // Now we need to parse the JSON data
@@ -317,6 +320,7 @@ void display_auth()
          page.replace("##usernameselected##", us);
          page.replace("##discordselected##", ds);
          page.replace("##idvalue##", u);
+         page.replace("##apiurl##", apiurl);
 
   send_text(page);
 }
@@ -353,6 +357,23 @@ void set_api()
   set_pswd(api_key, api_key_offset, false);
   set_pswd(api_secret, api_secret_offset);
   send_text("API details updated");
+}
+
+void set_apiurl()
+{
+  Serial.println("Setting API URL");
+  if (state == LOCKED)
+    return send_text("Safe is locked - Can not change now");
+
+  String newurl = server.arg("apiurl");
+  if (newurl != "" && newurl != apiurl)
+  {
+    apiurl=newurl;
+    set_pswd(apiurl, apiurl_offset);
+    send_text("URL updated");
+  }
+  else
+    send_text("No update made");
 }
 
 void set_user()
@@ -423,6 +444,7 @@ boolean handleRequest()
     else if (server.hasArg("open"))       { opensafe(); }
     else if (server.hasArg("setauth"))    { set_auth(); }
     else if (server.hasArg("setapi"))     { set_api(); }
+    else if (server.hasArg("setapiurl"))  { set_apiurl(); }
     else if (server.hasArg("setuser"))    { set_user(); }
     else if (server.hasArg("set_lock"))   { set_lock(); }
     else return false;
@@ -466,6 +488,9 @@ void setup()
   api_secret  = get_pswd(api_secret_offset);
   username    = get_pswd(username_offset);
   lockid      = get_pswd(lockid_offset);
+  apiurl      = get_pswd(apiurl_offset);
+  if (apiurl == "")
+    apiurl = DEFAULT_API;
 
   if (lockid != "")
   { 
@@ -482,6 +507,7 @@ void setup()
   Serial.println("  Wifi Pswd   >>>"+ wifi_pswd + "<<<");
   Serial.println("  API Key     >>>"+ api_key + "<<<");
   Serial.println("  API Secret  >>>"+ api_secret + "<<<");
+  Serial.println("  API URL     >>>"+ apiurl + "<<<");
   Serial.println("  Username    >>>"+ username + "<<<");
   Serial.println("  LockID      >>>"+ lockid + "<<<");
 

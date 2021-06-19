@@ -55,6 +55,15 @@ to that lock, so beware!<br>
 <input name=idvalue size=40 value="##idvalue##">
 <p>
 <input type=submit value="Set User Details" name=setuser>
+<p>
+The default endpoint this software talks to is the Chastikey v0.5 API.
+This may be changed here (if no lock is running) to another endpoint
+that supports the <tt>checklock.php</tt> endpoint.  NOTE: the server
+must also use a LetsEncrypt certificate so we can do secure communication.
+<p>
+<input name=apiurl size=50 value="##apiurl##">
+<p>
+<input type=submit value="Change API URL" name=setapiurl>
 </form>
 </body>
 </html>
