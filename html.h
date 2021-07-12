@@ -9,6 +9,8 @@ WiFi SSID: <input name=ssid size=40>
 <br>
 WiFi Password: <input name=password size=40>
 <br>
+Safe name: <input name=safename size=40 value="##safename##">
+<br>
 <input type=submit value="Set WiFi" name=setwifi>
 <hr>
 If the change is accepted, the safe will reboot after 5 seconds.
@@ -23,9 +25,9 @@ static const String change_auth_html = R"EOF(
 <form method=post action=safe/ enctype="multipart/form-data">
 To set the user name and password needed to access the safe:
 <br>
-Safe Username: <input name=username size=40>
+Safe Username: <input name=username size=40 value="##ui_username##">
 <br>
-Safe Password: <input name=password size=40>
+Safe Password: <input name=password size=40>  (keep blank to leave unchanged)
 <p>
 <input type=submit value="Set Auth Details" name=setauth>
 <p>

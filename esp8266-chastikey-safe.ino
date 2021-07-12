@@ -33,6 +33,7 @@
 //   Discord ID/Username
 //   Lock ID
 //   API URL
+//   Safe Name
 //
 // For simplicitly we'll limit them to 100 characters each and sprinkle
 // them through the EEPROM at 128 byte offsets
@@ -55,6 +56,7 @@
 #define username_offset      768
 #define lockid_offset        896
 #define apiurl_offset        1024
+#define safename_offset      1152
 
 enum safestate
 {
@@ -84,6 +86,7 @@ String api_secret;
 String username;
 String lockid;
 String apiurl;
+String safename;
 
 // Create the webserver structure for port 80
 ESP8266WebServer server(80);
@@ -321,31 +324,49 @@ void display_auth()
          page.replace("##discordselected##", ds);
          page.replace("##idvalue##", u);
          page.replace("##apiurl##", apiurl);
+         page.replace("##ui_username##", ui_username);
 
   send_text(page);
 }
 
 void set_ap()
 {
-  if (server.hasArg("ssid") && server.hasArg("password") && server.hasArg("setwifi"))
+  if (server.hasArg("setwifi"))
   {
-     Serial.println("Setting WiFi client:");
-     set_pswd(server.arg("ssid"), ui_wifi_ssid_offset, false);
-     set_pswd(server.arg("password"), ui_wifi_pswd_offset);
+     Serial.println("Setting WiFi client");
+     safename=server.arg("safename");
+     safename.replace(".local","");
+     if (safename != "")
+     {
+       Serial.println("  Setting mDNS name");
+       set_pswd(safename,safename_offset);
+     }
+
+     if (server.arg("ssid") != "" && server.arg("password") != "")
+     {
+       Serial.println("  Setting network");
+       set_pswd(server.arg("ssid"), ui_wifi_ssid_offset, false);
+       set_pswd(server.arg("password"), ui_wifi_pswd_offset);
+     }
      send_text("Restarting in 5 seconds");
      delay(5000);
      ESP.restart();
   }
-  send_text(change_ap_html);
+  String page = change_ap_html;
+         page.replace("##safename##", safename);
+  send_text(page);
 }
 
 void set_auth()
 {
   Serial.println("Setting Auth details");
   ui_username=server.arg("username");
-  ui_pswd=server.arg("password");
-  set_pswd(ui_username, ui_username_offset);
+  if (server.arg("password") != "")
+    ui_pswd=server.arg("password");
+
+  set_pswd(ui_username, ui_username_offset,false);
   set_pswd(ui_pswd, ui_pswd_offset);
+
   send_text("Password reset");
 }
 
@@ -491,6 +512,9 @@ void setup()
   apiurl      = get_pswd(apiurl_offset);
   if (apiurl == "")
     apiurl = DEFAULT_API;
+  safename    = get_pswd(safename_offset);
+  if (safename == "")
+    safename="safe";
 
   if (lockid != "")
   { 
@@ -505,6 +529,7 @@ void setup()
   Serial.println("  UI Password >>>"+ ui_pswd + "<<<");
   Serial.println("  Wifi SSID   >>>"+ wifi_ssid + "<<<");
   Serial.println("  Wifi Pswd   >>>"+ wifi_pswd + "<<<");
+  Serial.println("  Safe Name   >>>"+ safename + "<<<");
   Serial.println("  API Key     >>>"+ api_key + "<<<");
   Serial.println("  API Secret  >>>"+ api_secret + "<<<");
   Serial.println("  API URL     >>>"+ apiurl + "<<<");
@@ -575,7 +600,7 @@ void setup()
   }
 
   //initialize mDNS service.
-  MDNS.begin("safe");
+  MDNS.begin(safename);
   MDNS.addService("http", "tcp", 80);
   Serial.println("mDNS responder started");
 
