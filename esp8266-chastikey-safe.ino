@@ -229,11 +229,15 @@ void talk_to_api()
       s += "Lock " + String(i+1);
       if (raw_data["locks"][i]["lockName"] != "")
       {
-        s += " (" + String((const char*)raw_data["locks"][i]["lockName"]) + ")";
+        String l = raw_data["locks"][i]["lockName"];
+        l.replace("<","&lt;");
+        s += " (" + l + ")";
       }
       if (raw_data["locks"][i]["lockedBy"] != "")
       {
-        s += " locked by " + String((const char*)raw_data["locks"][i]["lockedBy"]);
+        String l = raw_data["locks"][i]["lockedBy"];
+        l.replace("<","&lt;");
+        s += " locked by " + l;
       }
 
       s += ": " + String((const char *)raw_data["locks"][i]["status"]) + "<br>";
