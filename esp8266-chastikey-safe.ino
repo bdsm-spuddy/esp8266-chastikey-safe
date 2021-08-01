@@ -21,7 +21,7 @@
 
 // This is pin D6 on most boards; this is the pin that needs to be
 // connected to the relay
-#define pin D6
+#define default_pin D6
 
 // We need to store some values in EEPROM.
 //   safe UI username
@@ -34,6 +34,7 @@
 //   Lock ID
 //   API URL
 //   Safe Name
+//   Pin to open solenoid
 //
 // For simplicitly we'll limit them to 100 characters each and sprinkle
 // them through the EEPROM at 128 byte offsets
@@ -57,6 +58,7 @@
 #define lockid_offset        896
 #define apiurl_offset        1024
 #define safename_offset      1152
+#define pin_offset           1280
 
 enum safestate
 {
@@ -87,6 +89,8 @@ String username;
 String lockid;
 String apiurl;
 String safename;
+String pinstr;
+int    pin;
 
 // Create the webserver structure for port 80
 ESP8266WebServer server(80);
@@ -346,6 +350,13 @@ void set_ap()
        set_pswd(safename,safename_offset);
      }
 
+     pinstr=server.arg("pin");
+     if (pinstr != "")
+     {
+       Serial.println("  Setting active pin");
+       set_pswd(pinstr,pin_offset);
+     }
+
      if (server.arg("ssid") != "" && server.arg("password") != "")
      {
        Serial.println("  Setting network");
@@ -358,6 +369,7 @@ void set_ap()
   }
   String page = change_ap_html;
          page.replace("##safename##", safename);
+         page.replace("##pin##", String(pin));
   send_text(page);
 }
 
@@ -498,10 +510,6 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 
-  // Set the safe state
-  pinMode(pin, OUTPUT);
-  digitalWrite(pin, LOW);
-
   Serial.println("Getting passwords from EEPROM");
 
   // Try reading the values from the EEPROM
@@ -514,11 +522,23 @@ void setup()
   username    = get_pswd(username_offset);
   lockid      = get_pswd(lockid_offset);
   apiurl      = get_pswd(apiurl_offset);
+  safename    = get_pswd(safename_offset);
+  pinstr      = get_pswd(pin_offset);
+
   if (apiurl == "")
     apiurl = DEFAULT_API;
-  safename    = get_pswd(safename_offset);
+
   if (safename == "")
     safename="safe";
+
+  if (pinstr != "")
+    pin=pinstr.toInt();
+  else
+    pin=default_pin;
+
+  // Set the safe state
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
 
   if (lockid != "")
   { 
@@ -539,6 +559,8 @@ void setup()
   Serial.println("  API URL     >>>"+ apiurl + "<<<");
   Serial.println("  Username    >>>"+ username + "<<<");
   Serial.println("  LockID      >>>"+ lockid + "<<<");
+  Serial.println("  Safename    >>>"+ safename + "<<<");
+  Serial.println("  Relay Pin   >>>"+ String(pin) + "<<<");
 
   // Connect to the network
   Serial.println();
