@@ -154,6 +154,13 @@ This is the lock <b>GROUP</b> ID value:<br>
 <br>
 <hr>
 <a href="change_ap.html">Change Safe Connection Details</a>
+<br>
+<hr>
+<a href="enable_update">Enable Safe Network Update</a>
+<br>
+<a href="disable_update">Disable Safe Network Update</a>
+<br>
+<hr>
 </center>
 </form>
 </body>

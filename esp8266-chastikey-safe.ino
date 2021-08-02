@@ -12,6 +12,7 @@
 #include <EEPROM.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266HTTPClient.h>
+#include <ArduinoOTA.h>
 
 #define ARDUINOJSON_USE_LONG_LONG 1
 #include <ArduinoJson.h>
@@ -71,6 +72,7 @@ enum safestate
 // Global variables
 int state=UNLOCKED;
 boolean wifi_connected;
+boolean allow_updates = false;
 
 // For communication to the API
 BearSSL::WiFiClientSecure client;
@@ -421,6 +423,28 @@ void set_user()
   send_text(F("User details updated"));
 }
 
+void enable_update(bool enable)
+{
+  if (enable)
+  {
+    if (lockid == "")
+    {
+      allow_updates = true;
+      send_text(F("Updates can be sent using BasicOTA to: ") + WiFi.localIP().toString());
+    }
+    else
+    {
+      allow_updates = false;
+      send_text(F("Can not perform update while safe is locked"));
+    }
+  }
+  else
+  {
+    allow_updates = false;
+    send_text(F("Update server disabled"));
+  }
+}
+
 void set_lock()
 {
   Serial.println(F("Setting lock"));
@@ -435,7 +459,11 @@ void set_lock()
     lockid="";
 
   if (lockid == "")
+  {
     state=UNLOCKED;
+    // Ensure update server is disabled
+    enable_update(0);
+  }
   else
     state=LOCKED;
 }
@@ -475,6 +503,8 @@ boolean handleRequest()
   else if (path == F("/top_frame.html"))   { send_text(FPSTR(top_frame_html)); }
   else if (path == F("/change_auth.html")) { display_auth(); }
   else if (path == F("/change_ap.html"))   { set_ap(); }
+  else if (path == F("/enable_update"))    { enable_update(1); }
+  else if (path == F("/disable_update"))   { enable_update(0); }
   else if (path == F("/safe/"))
   {
          if (server.hasArg("status"))     { status(); }
@@ -645,10 +675,44 @@ void setup()
   server.begin();
   
   Serial.println("TCP server started");
+
+  // Configure the OTA update service, but don't start it yet!
+  ArduinoOTA.setHostname(safename.c_str());
+
+  if (ui_pswd != "")
+    ArduinoOTA.setPassword(ui_pswd.c_str());
+
+  ArduinoOTA.onStart([]()
+  {
+    Serial.println(F("Starting updating"));
+  });
+
+  ArduinoOTA.onEnd([]() {
+    Serial.println(F("\nEnd"));
+  });
+
+  ArduinoOTA.onProgress([](unsigned int progress, unsigned int total) {
+    Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+  });
+
+  ArduinoOTA.onError([](ota_error_t error) {
+    Serial.printf("Error[%u]: ", error);
+    if (error == OTA_AUTH_ERROR) Serial.println(F("Auth Failed"));
+    else if (error == OTA_BEGIN_ERROR) Serial.println(F("Begin Failed"));
+    else if (error == OTA_CONNECT_ERROR) Serial.println(F("Connect Failed"));
+    else if (error == OTA_RECEIVE_ERROR) Serial.println(F("Receive Failed"));
+    else if (error == OTA_END_ERROR) Serial.println(F("End Failed"));
+  });
+
+  ArduinoOTA.begin();
+
+  Serial.println(F("OTA service configured"));
 }
 
 void loop()
 {
   MDNS.update();
   server.handleClient();
+  if (allow_updates)
+    ArduinoOTA.handle();
 }
