@@ -5,8 +5,8 @@ cd html || exit 255
 for a in *
 do
   b=$(echo $a | tr . _)
-  echo "static const String $b = R\"EOF("
+  echo "static const char $b[] PROGMEM = (R\"EOF("
   cat $a
-  echo ')EOF";'
+  echo ')EOF");'
   echo
 done

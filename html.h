@@ -1,4 +1,4 @@
-static const String change_ap_html = R"EOF(
+static const char change_ap_html[] PROGMEM = (R"EOF(
 <html>
 <body>
 
@@ -34,9 +34,9 @@ If the change is accepted, the safe will reboot after 5 seconds.
 </form>
 </body>
 </html>
-)EOF";
+)EOF");
 
-static const String change_auth_html = R"EOF(
+static const char change_auth_html[] PROGMEM = (R"EOF(
 <html>
 <body>
 <form method=post action=safe/ enctype="multipart/form-data">
@@ -86,9 +86,9 @@ must also use the same CA so we can do secure communication.
 </form>
 </body>
 </html>
-)EOF";
+)EOF");
 
-static const String index_html = R"EOF(
+static const char index_html[] PROGMEM = (R"EOF(
 <!DOCTYPE html>
 <html>
 
@@ -112,13 +112,13 @@ static const String index_html = R"EOF(
 </frameset>
 
 </html>
-)EOF";
+)EOF");
 
-static const String main_frame_html = R"EOF(
+static const char main_frame_html[] PROGMEM = (R"EOF(
 main
-)EOF";
+)EOF");
 
-static const String menu_frame_html = R"EOF(
+static const char menu_frame_html[] PROGMEM = (R"EOF(
 <html>
 <head>
   <base target="main">
@@ -158,13 +158,13 @@ This is the lock <b>GROUP</b> ID value:<br>
 </form>
 </body>
 </html>
-)EOF";
+)EOF");
 
-static const String top_frame_html = R"EOF(
+static const char top_frame_html[] PROGMEM = (R"EOF(
 <html>
 <body>
 <center><h1>Chastikey safe controls</h1></center>
 </body>
 </html>
-)EOF";
+)EOF");
 

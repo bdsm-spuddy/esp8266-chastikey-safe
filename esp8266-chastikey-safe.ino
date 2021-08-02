@@ -45,7 +45,7 @@
 
 #define EEPROM_SIZE 2048
 #define maxpwlen 100
-#define eeprom_magic "PSWD:"
+#define eeprom_magic F("PSWD:")
 #define eeprom_magic_len 5
 
 #define ui_username_offset   0
@@ -76,7 +76,7 @@ boolean wifi_connected;
 BearSSL::WiFiClientSecure client;
 BearSSL::X509List cert(rootCA);
 
-#define DEFAULT_API "https://api.chastikey.com/v0.5/checklock.php"
+#define DEFAULT_API F("https://api.chastikey.com/v0.5/checklock.php")
 
 // These can be read at startup time from EEPROM
 String ui_username;
@@ -140,7 +140,7 @@ void set_pswd(String s, int offset, bool commit=true)
 
 void send_text(String s)
 {
-  server.send(200, "text/html", s);
+  server.send(200, F("text/html"), s);
 }
 
 /////////////////////////////////////////
@@ -154,25 +154,25 @@ void talk_to_api()
   good_api_result = false;
 
   if (lockid == "")
-    return send_text("No lock has been set up.  The safe may be opened.");
+    return send_text(F("No lock has been set up.  The safe may be opened."));
 
   if (username == "" )
-    return send_text("No username has been set up.  Unable to check lock status");
+    return send_text(F("No username has been set up.  Unable to check lock status"));
 
   String us="";
   String u="";
-  if (username.startsWith("u:"))
+  if (username.startsWith(F("u:")))
   {
-    us="username";
+    us=F("username");
     u=username.substring(2);
   }
-  else if (username.startsWith("d:"))
+  else if (username.startsWith(F("d:")))
   {
-    us="discordID";
+    us=F("discordID");
     u=username.substring(2);
   }
   else
-    return send_text("Bad username details!");
+    return send_text(F("Bad username details!"));
 
   HTTPClient https;
   https.useHTTP10(true);
@@ -180,18 +180,18 @@ void talk_to_api()
   Serial.println(apiurl);
   if (https.begin(client, apiurl))
   { 
-    https.addHeader("ClientID",api_key);
-    https.addHeader("ClientSecret",api_secret);
-    https.addHeader("Content-Type","application/x-www-form-urlencoded");
+    https.addHeader(F("ClientID"),api_key);
+    https.addHeader(F("ClientSecret"),api_secret);
+    https.addHeader(F("Content-Type"),F("application/x-www-form-urlencoded"));
 
     // start connection and send HTTP header
-    Serial.println(us + "=" + u + "&lockID=" + lockid);
-    int httpCode = https.POST(us + "=" + u + "&lockID=" + lockid);
+    Serial.println(us + "=" + u + F("&lockID=") + lockid);
+    int httpCode = https.POST(us + "=" + u + F("&lockID=") + lockid);
 
     if (httpCode != 200)
     {
       https.end();
-      return send_text("Problems talking to API: Response " + String(httpCode) + " " + https.errorToString(httpCode));
+      return send_text(F("Problems talking to API: Response ") + String(httpCode) + " " + https.errorToString(httpCode));
     }
 
     // Now we need to parse the JSON data
@@ -208,9 +208,9 @@ void talk_to_api()
     DeserializationError error = deserializeJson(raw_data, https.getStream(), DeserializationOption::Filter(filter));
 
     if (error)
-      return send_text("Unable to decode JSON! " + String(error.c_str()));
+      return send_text(F("Unable to decode JSON! ") + String(error.c_str()));
 
-    Serial.println("JSON is:");
+    Serial.println(F("JSON is:"));
     serializeJsonPretty(raw_data, Serial);
     Serial.println();
  
@@ -220,36 +220,36 @@ void talk_to_api()
     int l = raw_data["locks"].size();
 
     if (l == 0)
-      return send_text("No lock found for ID " + String(lockid) + "!  Either the lockID is wrong or you deleted it...");
+      return send_text(F("No lock found for ID ") + String(lockid) + F("!  Either the lockID is wrong or you deleted it..."));
 
     good_api_result=true;
-    String s = "There are " + String(l) + " locks for lock group id " + String(lockid )+ "<br>";
+    String s = F("There are ") + String(l) + F(" locks for lock group id ") + String(lockid )+ F("<br>");
 
     bool to_unlock=false;
     for (int i=0;i<l;i++)
     {
-      if (raw_data["locks"][i]["status"] == "UnlockedReal")
+      if (raw_data["locks"][i]["status"] == F("UnlockedReal"))
         to_unlock=true;
-      s += "Lock " + String(i+1);
+      s += F("Lock ") + String(i+1);
       if (raw_data["locks"][i]["lockName"] != "")
       {
         String l = raw_data["locks"][i]["lockName"];
-        l.replace("<","&lt;");
-        s += " (" + l + ")";
+        l.replace(F("<"),F("&lt;"));
+        s += F(" (") + l + F(")");
       }
       if (raw_data["locks"][i]["lockedBy"] != "")
       {
         String l = raw_data["locks"][i]["lockedBy"];
-        l.replace("<","&lt;");
-        s += " locked by " + l;
+        l.replace(F("<"),F("&lt;"));
+        s += F(" locked by ") + l;
       }
 
-      s += ": " + String((const char *)raw_data["locks"][i]["status"]) + "<br>";
+      s += F(": ") + String((const char *)raw_data["locks"][i]["status"]) + F("<br>");
     }
 
     if (to_unlock)
     {
-      s += "<p>This lock is now available to unlock, and has been removed from the safe";
+      s += F("<p>This lock is now available to unlock, and has been removed from the safe");
       lockid = "";
       set_pswd(lockid, lockid_offset);
       state=UNLOCKED;
@@ -259,7 +259,7 @@ void talk_to_api()
     return send_text(s);
   }
   else
-    return send_text("Could not connect to server");
+    return send_text(F("Could not connect to server"));
 }
 
 /////////////////////////////////////////
@@ -275,9 +275,9 @@ void status()
 
 #if 0
   if (state==UNLOCKED)
-    send_text("Safe can be opened");
+    send_text(F("Safe can be opened"));
   else
-    send_text("Lock is still running; safe is locked");
+    send_text(F("Lock is still running; safe is locked"));
 #endif
 }
 
@@ -285,7 +285,7 @@ void opensafe()
 {
   if (state == LOCKED)
   {
-    send_text("Can not open; lock is still running");
+    send_text(F("Can not open; lock is still running"));
   }
   else
   {
@@ -295,16 +295,16 @@ void opensafe()
     digitalWrite(LED_BUILTIN, LOW);
     digitalWrite(pin, HIGH);
     server.setContentLength(CONTENT_LENGTH_UNKNOWN);
-    send_text("Unlocking safe for " + String(del) + " seconds<br>");
+    send_text(F("Unlocking safe for ") + String(del) + F(" seconds<br>"));
     while(del--)
     {
       delay(1000);
-      server.sendContent(String(del) + "...\n");
-      if (del%10 == 0) server.sendContent("<br>");
+      server.sendContent(String(del) + F("...\n"));
+      if (del%10 == 0) server.sendContent(F("<br>"));
     }
     digitalWrite(pin, LOW);
     digitalWrite(LED_BUILTIN, HIGH);
-    server.sendContent("Completed");
+    server.sendContent(F("Completed"));
     server.sendContent("");
   }
 }
@@ -314,25 +314,25 @@ void display_auth()
   String us="";
   String ds="";
   String u="";
-  if (username.startsWith("u:"))
+  if (username.startsWith(F("u:")))
   {
-    us="selected";
+    us=F("selected");
     u=username.substring(2);
   }
-  else if (username.startsWith("d:"))
+  else if (username.startsWith(F("d:")))
   {
-    ds="selected";
+    ds=F("selected");
     u=username.substring(2);
   }
 
-  String page = change_auth_html;
-         page.replace("##apikey##", api_key);
-         page.replace("##apisecret##", api_secret);
-         page.replace("##usernameselected##", us);
-         page.replace("##discordselected##", ds);
-         page.replace("##idvalue##", u);
-         page.replace("##apiurl##", apiurl);
-         page.replace("##ui_username##", ui_username);
+  String page = FPSTR(change_auth_html);
+         page.replace(F("##apikey##"), api_key);
+         page.replace(F("##apisecret##"), api_secret);
+         page.replace(F("##usernameselected##"), us);
+         page.replace(F("##discordselected##"), ds);
+         page.replace(F("##idvalue##"), u);
+         page.replace(F("##apiurl##"), apiurl);
+         page.replace(F("##ui_username##"), ui_username);
 
   send_text(page);
 }
@@ -341,41 +341,41 @@ void set_ap()
 {
   if (server.hasArg("setwifi"))
   {
-     Serial.println("Setting WiFi client");
+     Serial.println(F("Setting WiFi client"));
      safename=server.arg("safename");
-     safename.replace(".local","");
+     safename.replace(F(".local"),"");
      if (safename != "")
      {
-       Serial.println("  Setting mDNS name");
+       Serial.println(F("  Setting mDNS name"));
        set_pswd(safename,safename_offset);
      }
 
      pinstr=server.arg("pin");
      if (pinstr != "")
      {
-       Serial.println("  Setting active pin");
+       Serial.println(F("  Setting active pin"));
        set_pswd(pinstr,pin_offset);
      }
 
      if (server.arg("ssid") != "" && server.arg("password") != "")
      {
-       Serial.println("  Setting network");
+       Serial.println(F("  Setting network"));
        set_pswd(server.arg("ssid"), ui_wifi_ssid_offset, false);
        set_pswd(server.arg("password"), ui_wifi_pswd_offset);
      }
-     send_text("Restarting in 5 seconds");
+     send_text(F("Restarting in 5 seconds"));
      delay(5000);
      ESP.restart();
   }
-  String page = change_ap_html;
-         page.replace("##safename##", safename);
-         page.replace("##pin##", String(pin));
+  String page = FPSTR(change_ap_html);
+         page.replace(F("##safename##"), safename);
+         page.replace(F("##pin##"), String(pin));
   send_text(page);
 }
 
 void set_auth()
 {
-  Serial.println("Setting Auth details");
+  Serial.println(F("Setting Auth details"));
   ui_username=server.arg("username");
   if (server.arg("password") != "")
     ui_pswd=server.arg("password");
@@ -383,49 +383,49 @@ void set_auth()
   set_pswd(ui_username, ui_username_offset,false);
   set_pswd(ui_pswd, ui_pswd_offset);
 
-  send_text("Password reset");
+  send_text(F("Password reset"));
 }
 
 void set_api()
 {
-  Serial.println("Setting API details");
+  Serial.println(F("Setting API details"));
   api_key=server.arg("apikey");
   api_secret=server.arg("apisecret");
   set_pswd(api_key, api_key_offset, false);
   set_pswd(api_secret, api_secret_offset);
-  send_text("API details updated");
+  send_text(F("API details updated"));
 }
 
 void set_apiurl()
 {
-  Serial.println("Setting API URL");
+  Serial.println(F("Setting API URL"));
   if (state == LOCKED)
-    return send_text("Safe is locked - Can not change now");
+    return send_text(F("Safe is locked - Can not change now"));
 
   String newurl = server.arg("apiurl");
   if (newurl != "" && newurl != apiurl)
   {
     apiurl=newurl;
     set_pswd(apiurl, apiurl_offset);
-    send_text("URL updated");
+    send_text(F("URL updated"));
   }
   else
-    send_text("No update made");
+    send_text(F("No update made"));
 }
 
 void set_user()
 {
-  Serial.println("Setting API details");
+  Serial.println(F("Setting API details"));
   username=server.arg("idtype") + ":" + server.arg("idvalue");
   set_pswd(username, username_offset);
-  send_text("User details updated");
+  send_text(F("User details updated"));
 }
 
 void set_lock()
 {
-  Serial.println("Setting lock");
+  Serial.println(F("Setting lock"));
   if (state == LOCKED)
-    return send_text("Safe is already locked");
+    return send_text(F("Safe is already locked"));
 
   lockid=server.arg("session");
   talk_to_api();
@@ -451,31 +451,31 @@ boolean handleRequest()
     // and there's no authn required
     ui_username = "";
     ui_pswd = "";
-    path="/change_ap.html";
+    path=F("/change_ap.html");
   }
 
-  Serial.println("New client for >>>"+path+"<<<");
+  Serial.println(F("New client for >>>")+path+F("<<<"));
 
   for(int i=0;i<server.args();i++)
   {
-    Serial.println("Arg " + String(i) + ": " + server.argName(i) + " --- " + server.arg(i));
+    Serial.println(F("Arg ") + String(i) + F(": ") + server.argName(i) + F(" --- ") + server.arg(i));
   }
 
   // Ensure username/password have been passed
   if (ui_username != "" && !server.authenticate(ui_username.c_str(), ui_pswd.c_str()))
   {
-    Serial.println("Bad authentication; login needed");
+    Serial.println(F("Bad authentication; login needed"));
     server.requestAuthentication();
     return true;
   }
 
-       if (path == "/")                 { send_text(index_html); }
-  else if (path == "/main_frame.html")  { send_text(main_frame_html); }
-  else if (path == "/menu_frame.html")  { send_text(menu_frame_html); }
-  else if (path == "/top_frame.html")   { send_text(top_frame_html); }
-  else if (path == "/change_auth.html") { display_auth(); }
-  else if (path == "/change_ap.html")   { set_ap(); }
-  else if (path == "/safe/")
+       if (path == F("/"))                 { send_text(FPSTR(index_html)); }
+  else if (path == F("/main_frame.html"))  { send_text(FPSTR(main_frame_html)); }
+  else if (path == F("/menu_frame.html"))  { send_text(FPSTR(menu_frame_html)); }
+  else if (path == F("/top_frame.html"))   { send_text(FPSTR(top_frame_html)); }
+  else if (path == F("/change_auth.html")) { display_auth(); }
+  else if (path == F("/change_ap.html"))   { set_ap(); }
+  else if (path == F("/safe/"))
   {
          if (server.hasArg("status"))     { status(); }
     else if (server.hasArg("open"))       { opensafe(); }
@@ -488,7 +488,7 @@ boolean handleRequest()
   }
   else
   {
-    Serial.println("File not found");
+    Serial.println(F("File not found"));
     return false;
   }
   return true;
@@ -501,7 +501,7 @@ void setup()
   Serial.begin(115200);
   delay(500);
 
-  Serial.println("Starting...");
+  Serial.println(F("Starting..."));
 
   // Get the EEPROM contents into RAM
   EEPROM.begin(EEPROM_SIZE);
@@ -510,7 +510,7 @@ void setup()
   pinMode(LED_BUILTIN, OUTPUT);
   digitalWrite(LED_BUILTIN, HIGH);
 
-  Serial.println("Getting passwords from EEPROM");
+  Serial.println(F("Getting passwords from EEPROM"));
 
   // Try reading the values from the EEPROM
   ui_username = get_pswd(ui_username_offset);
@@ -529,7 +529,7 @@ void setup()
     apiurl = DEFAULT_API;
 
   if (safename == "")
-    safename="safe";
+    safename=F("safe");
 
   if (pinstr != "")
     pin=pinstr.toInt();
@@ -548,19 +548,19 @@ void setup()
   // This is a debugging line; it's only sent to the serial
   // port which can only be accessed when the safe is unlocked.
   // We don't exposed passwords!
-  Serial.println("Found in EEPROM:");
-  Serial.println("  UI Username >>>"+ ui_username + "<<<");
-  Serial.println("  UI Password >>>"+ ui_pswd + "<<<");
-  Serial.println("  Wifi SSID   >>>"+ wifi_ssid + "<<<");
-  Serial.println("  Wifi Pswd   >>>"+ wifi_pswd + "<<<");
-  Serial.println("  Safe Name   >>>"+ safename + "<<<");
-  Serial.println("  API Key     >>>"+ api_key + "<<<");
-  Serial.println("  API Secret  >>>"+ api_secret + "<<<");
-  Serial.println("  API URL     >>>"+ apiurl + "<<<");
-  Serial.println("  Username    >>>"+ username + "<<<");
-  Serial.println("  LockID      >>>"+ lockid + "<<<");
-  Serial.println("  Safename    >>>"+ safename + "<<<");
-  Serial.println("  Relay Pin   >>>"+ String(pin) + "<<<");
+  Serial.println(F("Found in EEPROM:"));
+  Serial.println(F("  UI Username >>>")+ ui_username + F("<<<"));
+  Serial.println(F("  UI Password >>>")+ ui_pswd + F("<<<"));
+  Serial.println(F("  Wifi SSID   >>>")+ wifi_ssid + F("<<<"));
+  Serial.println(F("  Wifi Pswd   >>>")+ wifi_pswd + F("<<<"));
+  Serial.println(F("  Safe Name   >>>")+ safename + F("<<<"));
+  Serial.println(F("  API Key     >>>")+ api_key + F("<<<"));
+  Serial.println(F("  API Secret  >>>")+ api_secret + F("<<<"));
+  Serial.println(F("  API URL     >>>")+ apiurl + F("<<<"));
+  Serial.println(F("  Username    >>>")+ username + F("<<<"));
+  Serial.println(F("  LockID      >>>")+ lockid + F("<<<"));
+  Serial.println(F("  Safename    >>>")+ safename + F("<<<"));
+  Serial.println(F("  Relay Pin   >>>")+ String(pin) + F("<<<"));
 
   // Connect to the network
   Serial.println();
