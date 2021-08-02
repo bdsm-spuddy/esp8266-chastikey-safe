@@ -31,6 +31,12 @@ GPIO15 == D8
 <input type=submit value="Set WiFi" name=setwifi>
 <hr>
 If the change is accepted, the safe will reboot after 5 seconds.
+<hr>
+<p>
+&nbsp;
+<p>
+&nbsp;
+<font size=-3>Software version: ##VERSION##</font>
 </form>
 </body>
 </html>

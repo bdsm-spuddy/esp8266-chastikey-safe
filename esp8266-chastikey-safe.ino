@@ -19,6 +19,7 @@
 
 #include "html.h"
 #include "rootCA.h"
+#include "version.h"
 
 // This is pin D6 on most boards; this is the pin that needs to be
 // connected to the relay
@@ -372,6 +373,7 @@ void set_ap()
   String page = FPSTR(change_ap_html);
          page.replace(F("##safename##"), safename);
          page.replace(F("##pin##"), String(pin));
+         page.replace(F("##VERSION##"), VERSION);
   send_text(page);
 }
 
